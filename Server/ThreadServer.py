@@ -46,7 +46,12 @@ def recvImg(req):
     """
     Receive the image array
     From client, server side get the image size, image height and width and image.
-    The whole string contains the image head: three arguments, length is 24.
+    The whole string contains the image head: three arguments, length is 24. Arguments are separated by "-".
+    For example:
+    --------------
+    "200000-800-600         "(length = 24)
+    Mat.dump()
+    --------------
 
     Return
     @data: image's numpy array
