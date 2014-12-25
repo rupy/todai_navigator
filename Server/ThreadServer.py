@@ -9,7 +9,7 @@ import numpy as np
 import sys
 import threading
 from PIL import Image
-import StringIO
+import re
 
 
 class ThreadedTCPRequestHandler( SocketServer.BaseRequestHandler):
@@ -45,30 +45,30 @@ def recvall(req, count):
 def recvImg(req):
     """
     Receive the image array
+    From client, server side get the image size, image height and width and image.
+    The whole string contains the image head: three arguments, length is 24.
+
     Return
     @data: image's numpy array
     """
-    tmpBuf = recvall(req, 16)
-    print "imageLength:%s" %tmpBuf
-    imageArgs = tmpBuf.split('-')
-    #print "imageLength's len:%d" %len(length)
-    stringData = recvall(req, int(imageArgs[0]))
-    #print stringData
+    imageArgsBuf = recvall(req, 24)
+    imageArgs = imageArgsBuf.split('-')
+    if len(imageArgs) != 3:
+        return None
+    originImgData = recvall(req, int(imageArgs[0]))
+    height = int(imageArgs[1])
+    width = int(imageArgs[2])
     #shape = recvShape(req)
     #shape = (int(imageArgs[1]),int(imageArgs[2]))
-    #data = np.fromstring(stringData, dtype='uint8').reshape(shape)
-    data =np.fromstring(stringData, dtype='uint8')
-    stringData = str(data)[1:-1]
-    print stringData
-    strIOBuf = StringIO.StringIO(stringData)
-    strIOBuf.seek(0)
-    data = Image.open(strIOBuf)
-    #image = Image.open(str)
-
-    #print data.size, data.format
+    processImgData = re.sub(r'\[|\]|;|,', " ", originImgData)
+    data = np.fromstring(processImgData, dtype='uint8', sep = ' ')
+    data = data.reshape((height, width, 3))
     #print data
+    #cv2.imwrite("test.jpg", data)
+    #image = Image.open(str)
     return data
 
+#Maybe not use
 def recvShape(req):
     """
     Receive the image array's dimension
