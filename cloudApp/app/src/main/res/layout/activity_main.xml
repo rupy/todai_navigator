@@ -1,13 +1,10 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="wrap_content"
     xmlns:opencv="http://schemas.android.com/apk/res-auto"
     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
-
-    <TextView android:text="@string/hello_world" android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
     <org.opencv.android.JavaCameraView
         android:id="@+id/camera_view"
@@ -15,6 +12,31 @@
         android:layout_height="fill_parent"
         android:visibility="visible"
         opencv:camera_id="any"
-        opencv:show_fps="true" />
+        opencv:show_fps="true"
+        android:layout_above="@+id/textView"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView"
+        android:layout_alignParentBottom="true"
+        android:textSize="24sp"
+        android:textIsSelectable="false"
+        android:enabled="true"
+        android:editable="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/textView2"
+        android:layout_alignBottom="@+id/textView"
+        android:layout_alignRight="@+id/camera_view"
+        android:layout_alignEnd="@+id/camera_view"
+        android:layout_alignTop="@+id/textView"
+        android:textSize="24sp"
+        android:editable="true"
+        android:enabled="true" />
 
 </RelativeLayout>
