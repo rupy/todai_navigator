@@ -15,6 +15,13 @@ import android.os.Handler;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.*;
+import android.widget.Toast;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -51,8 +58,9 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     /* Time */
     private long previous_time, current_time;
     /* Netwotk */
-    private static final String SERVER_ADDR = "192.168.1.11";
-    private static final int PORT = 9876;
+    private String SERVER_ADDR = "192.168.100.101";
+    private int PORT = 9876;
+    private int PORT2 = 9875;
     // ライブラリ初期化完了後に呼ばれるコールバック (onManagerConnected)
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -74,18 +82,21 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private Handler handler;
     // ソケット
     private ServerSocket serverSocket = null;
+    private ServerSocket serverSocket2 = null;
     //
     private LocationManager manager;
     //
     private double lat;
     private double lng;
 
+    private String[] intr = {"赤門", "安田講堂", "工学部2号館", "理学部1号艦", "三四郎池"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().requestFeature(Window.FEATURE_ACTION_BAR);
         setContentView(R.layout.activity_main);
         // カメラビューのインスタンスを変数にバインド
         mCameraView = (CameraBridgeViewBase)findViewById(R.id.camera_view);
@@ -93,42 +104,84 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mCameraView.setCvCameraViewListener(this);
         //
         mText = (TextView)findViewById(R.id.textView);
-        mText2 = (TextView)findViewById(R.id.textView2);
+
+        /*mText2 = (TextView)findViewById(R.id.textView2);*/
 
         handler = new Handler();
 
         manager = (LocationManager)getSystemService(LOCATION_SERVICE);
 
+        setTheme(android.R.style.Theme_Black_NoTitleBar);       //タイトルバー(アクションバー)なし
+        setTheme(android.R.style.Theme_WithActionBar);        //アクションバーあり
+
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_main, menu);
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+
+        // メニューの要素を追加
+        menu.add("Set IP_ADDR & PORT");
+
+        // メニューの要素を追加して取得
+        MenuItem actionItem = menu.add("Action Button");
+
+        // SHOW_AS_ACTION_IF_ROOM:余裕があれば表示
+        actionItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        // アイコンを設定
+        actionItem.setIcon(android.R.drawable.ic_menu_share);
+
+        //getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        //テキスト入力を受け付けるビューを作成します。
+        final EditText editView = new EditText(MainActivity.this);
+        new AlertDialog.Builder(MainActivity.this)
+                .setIcon(android.R.drawable.ic_dialog_info)
+                .setTitle("IPアドレス入力ダイアログ")
+                        //setViewにてビューを設定します。
+                .setView(editView)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        //入力した文字をトースト出力する
+                        Toast.makeText(MainActivity.this,
+                                (SERVER_ADDR=editView.getText().toString()),
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                })
+                .setNegativeButton("キャンセル", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                    }
+                })
+                .show();
+        /*
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+        */
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     @Override
     protected void onResume() {
         // 非同期でライブラリの読み込み/初期化を行う
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_9, this, mLoaderCallback); // 各自のバージョンに合わせる
         if(manager != null){
-            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,this);
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0,this);
         }
         super.onResume();
     }
@@ -172,7 +225,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         // 0.3sに一度画像を保存する
         Date Time = new Date();
         current_time = Time.getTime();
-        if(current_time - previous_time > 5000) {
+        if(current_time - previous_time > 4000) {
             Log.d(TAG, String.valueOf(current_time));
             previous_time = current_time;
             Send_thread sth = new Send_thread(inputFrame);
@@ -208,15 +261,16 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         public void run(){
             try {
-                if(serverSocket==null) serverSocket = new ServerSocket(PORT);
-                Socket socket = serverSocket.accept();
+                if(serverSocket2==null) serverSocket2 = new ServerSocket(PORT2);
+                Socket socket = serverSocket2.accept();
                 InputStream is = socket.getInputStream();
                 DataInputStream dis = new DataInputStream(is);
                 final String in = dis.readLine();
+                final int index = Integer.parseInt(in);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        mText.setText(in);
+                        mText.setText(intr[index]/*in*/);
                     }
                 });
                 is.close();
@@ -253,9 +307,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             /* 画像の圧縮 */
                 int height = mat.height();
                 int width = mat.width();
+                Mat img = new Mat();
+                Imgproc.cvtColor(mat, img, Imgproc.COLOR_RGB2BGR);
                 MatOfByte buf = new MatOfByte();
-                MatOfInt params = new MatOfInt(Highgui.CV_IMWRITE_JPEG_QUALITY, 100);
-                Highgui.imencode(".jpg", mat, buf, params);
+                MatOfInt params = new MatOfInt(Highgui.CV_IMWRITE_JPEG_QUALITY, 50);
+                Highgui.imencode(".jpg", img, buf, params);
 
             /* 画像の送信 */
                 boolean binary = true; //　バイナリで送りたい場合はtrueにする.
@@ -315,7 +371,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     public void onLocationChanged(Location location){
         lat = location.getLatitude();
         lng = location.getLongitude();
-        mText2.setText("Lat: " + lat + "\tLng: " + lng);
+        //mText2.setText("Lat: " + lat + "\tLng: " + lng);
     }
 
     @Override
